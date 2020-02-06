@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">CPedidos</string>
+
+    <string-array name="unidad">
+        <item>PIEZA</item>
+        <item>KG</item>
+    </string-array>
+</resources>
