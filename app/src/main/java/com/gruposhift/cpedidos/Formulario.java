@@ -13,7 +13,10 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import com.gruposhift.cpedidos.adapters.AdaptadorAddPedido;
 import com.gruposhift.cpedidos.model.Cliente;
+import com.gruposhift.cpedidos.model.DVenta;
 import com.gruposhift.cpedidos.model.Pedido;
 import com.gruposhift.cpedidos.model.Producto;
 import com.loopj.android.http.*;
@@ -35,6 +38,7 @@ public class Formulario extends AppCompatActivity {
     private Button agregar;
     private ListView listNuevoPedido;
     private AsyncHttpClient httpClient;
+    ArrayList<DVenta> dVentas = new ArrayList<DVenta>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,8 +53,8 @@ public class Formulario extends AppCompatActivity {
         edtCantiad = (EditText)findViewById(R.id.edtCantidad);
         agregar = (Button) findViewById(R.id.btnAgregarPrdocuto);
         listNuevoPedido = (ListView) findViewById(R.id.listNPedido);
-        llamarPHP("http://192.168.0.28:8080/pedidos/readClientes.php", 1);
-        llamarPHP("http://192.168.0.28:8080/pedidos/readPRoducto.php", 2);
+        llamarPHP("http://192.168.1.66:8080/pedidos/readClientes.php", 1);
+        llamarPHP("http://192.168.1.66:8080/pedidos/readPRoducto.php", 2);
         spinnerEstatito();
 
 
@@ -64,8 +68,13 @@ public class Formulario extends AppCompatActivity {
         agregar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-             //   validarFormulario();
-                recuperarFormulario();
+
+                if (validarFormulario()){
+                    recuperarFormulario();
+                    Toast.makeText(getApplicationContext(), "Producto a la lista", Toast.LENGTH_SHORT).show();
+                    limpiarFormulario();
+                    spCliente.setEnabled(false);
+                }
             }
         });
     }
@@ -150,34 +159,42 @@ public class Formulario extends AppCompatActivity {
     }
 
     private void recuperarFormulario(){
-        Cliente cliente = (Cliente) spCliente.getSelectedItem();
-        String client = Integer.toString(cliente.getSysPK());
-        String fecha = String.valueOf(fechaEdt.getText());
+
+
+        DVenta dVenta = new DVenta();
+
+        //Cliente cliente = (Cliente) spCliente.getSelectedItem();
+        //dVenta.getVenta().setCliente(cliente);
+        //String client = Integer.toString(cliente.getSysPK());
+        //String fecha = String.valueOf(fechaEdt.getText());
 
         Pedido producto = (Pedido) spProducto.getSelectedItem();
-        String product = Integer.toString(producto.getSysPK());
+        //String product = Integer.toString(producto.getSysPK());
+        producto.setSysPK(producto.getSysPK());
+        producto.setDescripcion(producto.getDescripcion());
+        dVenta.setPedido(producto);
+        dVenta.setCantidad(Double.parseDouble(edtCantiad.getText().toString()));
+        String unidad = spCantidad.getSelectedItem().toString();
+        dVenta.setUnidad(unidad);
+        dVentas.add(dVenta);
 
-        ArrayList<String>  generar = new ArrayList<String>();
-        generar.add(client);
-        generar.add(fecha);
-        generar.add(product);
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.support_simple_spinner_dropdown_item, generar );
+        AdaptadorAddPedido adapter = new AdaptadorAddPedido(this, R.layout.list_addpedido, dVentas );
         listNuevoPedido.setAdapter(adapter);
 
 
-        Toast.makeText(getApplicationContext(), "Valor  " + client + " Fecha :" +  fecha + "Prod" + product, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getApplicationContext(), "Valor  " + client + " Fecha :" +  fecha + "Prod" + product, Toast.LENGTH_SHORT).show();
     }
 
     private boolean validarFormulario(){
-        if (fechaEdt.getText().toString().isEmpty()) {
-            Toast.makeText(getApplicationContext(), "Valores invalidos", Toast.LENGTH_SHORT).show();
+        if (fechaEdt.getText().toString().isEmpty() || edtCantiad.getText().toString().trim().isEmpty()) {
+            Toast.makeText(getApplicationContext(), "Debes completar todos los campos", Toast.LENGTH_SHORT).show();
             return false;
         }
-            else {
-                Toast.makeText(getApplicationContext(), "Valores validos", Toast.LENGTH_SHORT).show();
-                return  true;
-            }
+        return  true;
+    }
 
+    private void limpiarFormulario(){
+        fechaEdt.setText("");
+        edtCantiad.setText("");
     }
 }

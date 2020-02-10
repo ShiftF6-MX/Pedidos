@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void leerPhp(){
-        String url = "http://192.168.0.28:8080/pedidos/ReadMaxi.php";
+        String url = "http://192.168.1.66:8080/pedidos/ReadMaxi.php";
         httpClient.post(url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
