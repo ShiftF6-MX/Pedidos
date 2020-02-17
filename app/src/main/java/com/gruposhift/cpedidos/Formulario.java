@@ -95,10 +95,8 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
             public void onClick(View v) {
                // abrirDialogoProducto();
                 if (validarFormularioCrearPedido()){
-                    actualizarUltimo();
+                    actualizarUltimo(URLs.readBlockDocumento);
                 }
-                //llamarVenta();
-                //leerUltimoFolio();
             }
         });
     }
@@ -222,17 +220,15 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
         return  true;
     }
 
-    private void actualizarUltimo(){
+    private void actualizarUltimo(String url){
 
-        String url = "http://192.168.1.66:8080/pedidos/readBlockDocumento.php";
         httpClient.post(url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 if(statusCode == 200){
-                   Toast.makeText(getApplicationContext(), "Bienvenido", Toast.LENGTH_SHORT).show();
+
                    actualizarUltimo2(new String(responseBody));
-                } else {
-                    Toast.makeText(getApplicationContext(), "No se pudo realizar la conexión", Toast.LENGTH_SHORT).show();
+
                 }
             }
             @Override
@@ -252,9 +248,10 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
                 blockDocumento.setFultimo((jsonObject.getJSONObject(i).getInt("FUltimo"))+1);
                 blockDocumento.setSerie(jsonObject.getJSONObject(i).getString("Serie"));
 
-                Toast.makeText(getApplicationContext(), "FUltimo primer metodo " + blockDocumento.getFultimo() , Toast.LENGTH_SHORT).show();
+               String url = URLs.updateBlockDocumento +
+                       "FUltimo=" + blockDocumento.getFultimo() + "&Sys_PK=" + blockDocumento.getSysPK();
 
-                actualizarUlitmo3(blockDocumento);
+                actualizarURL(url, blockDocumento, 1);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -262,31 +259,58 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
 
     }
 
-    private void actualizarUlitmo3(final BlockDocumento blockDocumento) {
+    private void actualizarURL(String url, final BlockDocumento blockDocumento,int opcion) {
 
-        Toast.makeText(getApplicationContext(), "Actualizar 3 " + blockDocumento.getFultimo()  +
-                "Syspk = " + blockDocumento.getSysPK(), Toast.LENGTH_SHORT).show();
+        if(opcion == 1 ){
 
-        String url = "http://192.168.1.66:8080/pedidos/updateBlockDocumentos.php?";
-        String parametros = "FUltimo=" + blockDocumento.getFultimo() + "&Sys_PK=" + blockDocumento.getSysPK();
-
-        httpClient.post(url + parametros, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                if (statusCode == 200){
-                    Toast.makeText(getApplicationContext(),"Se actualizo blockdocumentos", Toast.LENGTH_SHORT).show();
-                    foliosDocumentos(blockDocumento);
+            httpClient.post(url, new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    if (statusCode == 200){
+                        String url = URLs.insertFoliosDocumento + "Folio=" +blockDocumento.getFultimo();
+                        actualizarURL(url, blockDocumento, 2);
+                    }
                 }
-            }
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Toast.makeText(getApplicationContext(),"Error al actulizar", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else if(opcion == 2){
 
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Toast.makeText(getApplicationContext(),"Error al actulizar", Toast.LENGTH_SHORT).show();
-            }
-        });
+            httpClient.post(url, new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    if (statusCode == 200){
+                        String url = URLs.readUltimoFolioDocumento;
+                        actualizarURL(url, blockDocumento, 3);
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Toast.makeText(getApplicationContext(),"Error al actulizar", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else  if (opcion == 3){
+            httpClient.post(url, new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    if (statusCode == 200){
+                        recuperarFolio(new String(responseBody), blockDocumento);
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+                }
+            });
+        }
+
     }
 
-    private void foliosDocumentos(final BlockDocumento blockDocumento){
+    /*private void foliosDocumentos(String url, final BlockDocumento blockDocumento){
         String url = "http://192.168.1.66:8080/pedidos/insertFoliosDocumentos.php?";
         String parametros = "Folio=" +blockDocumento.getFultimo();
         httpClient.post(url + parametros, new AsyncHttpResponseHandler() {
@@ -302,9 +326,9 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
 
             }
         });
-    }
+    }*/
 
-    public void leerUltimoFolio(final BlockDocumento blockDocumento){
+   /* public void leerUltimoFolio(final BlockDocumento blockDocumento){
         String url = "http://192.168.1.66:8080/pedidos/readUltimoFoliosDocumento.php";
         httpClient.post(url, new AsyncHttpResponseHandler() {
             @Override
@@ -320,7 +344,7 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
             }
         });
 
-    }
+    }*/
 
     private void recuperarFolio(String response, BlockDocumento blockDocumento){
         try {
@@ -329,15 +353,13 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
             for (int i = 0; i < array.length(); i++){
                 FoliosDocumentos foliosDocumentos = new FoliosDocumentos();
                 foliosDocumentos.setSysPK(array.getJSONObject(i).getInt("Sys_PK"));
-                Toast.makeText(getApplicationContext(), "Sys PK del ultimo folio " + foliosDocumentos.getSysPK(),
-                        Toast.LENGTH_SHORT).show();
-
                 blockDocumento.setSysPK(blockDocumento.getSysPK());
                 blockDocumento.setSerie(blockDocumento.getSerie());
                 blockDocumento.setFultimo(blockDocumento.getFultimo());
                 foliosDocumentos.setBlockDocumentos(blockDocumento);
 
-                insertVenta(foliosDocumentos);
+                String urlVenta = URLs.insertVenta;
+                insertVenta(foliosDocumentos, urlVenta);
             }
 
         }catch (JSONException e){
@@ -346,18 +368,11 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
 
     }
 
-    private void insertVenta(FoliosDocumentos documentos){
+    private void insertVenta(FoliosDocumentos documentos, String url){
 
-        String url = "http://192.168.1.66:8080/pedidos/insertVenta.php?";
-        //Venta venta = new Venta();
         Cliente cliente = (Cliente) spCliente.getSelectedItem();
         cliente.setSysPK(cliente.getSysPK());
-        //venta.setCliente(cliente);
-        //documentos.setSysPK(documentos.getSysPK());
-
         String referencia = documentos.getBlockDocumentos().getSerie() + documentos.getBlockDocumentos().getFultimo();
-
-       // venta.setFoliosDocumentos(documentos);
 
         String parametros = "Fecha="+ fechaEdt.getText() + "&Referencia=" + referencia + "&ICliente=" + cliente.getSysPK() +
                             "&IFolio=" + documentos.getSysPK();
@@ -366,23 +381,21 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 if(statusCode == 200){
                     Toast.makeText(getApplicationContext(), "Se hizo el insert De venta", Toast.LENGTH_SHORT).show();
-                    llamarVenta();
+                    llamarVenta(URLs.readUltimaVeta);
                 } else  {
-                    Toast.makeText(getApplicationContext(), "Error en la venta", Toast.LENGTH_SHORT).show();
+
                 }
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-
+                Toast.makeText(getApplicationContext(), "Error en la venta", Toast.LENGTH_SHORT).show();
             }
         });
 
     }
 
-    private void llamarVenta(){
-
-        String url = "http://192.168.1.66:8080/pedidos/readUltimoVenta.php";
+    private void llamarVenta(String url){
 
         httpClient.post(url, new AsyncHttpResponseHandler() {
             @Override
@@ -420,9 +433,7 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
 
     private void insertDetalleventa(Venta venta){
 
-        String url = "http://192.168.1.66:8080/pedidos/insertDventa.php?";
-
-
+        String url = URLs.insertDetalleVenta;
 
         for(int i = 0; i < dVentas.size(); i++){
             Pedido pedido = new Pedido();
@@ -434,19 +445,9 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
 
 
             String parametro = url + pa;
-
-            Toast.makeText(getApplicationContext(), "Datos \n "+
-                    "Prodcuto =" + dVentas.get(i).getPedido().getSysPK() +
-                     " Ultima venta = " + venta.getSysPK()+
-                     " Cantidad = " + dVentas.get(i).getCantidad()+
-                     " unidad = " + dVentas.get(i).getUnidad(), Toast.LENGTH_SHORT).show();
-
             insertarDetalle(parametro);
 
-            Toast.makeText(getApplicationContext(), "Pedido creado con exito" + parametro, Toast.LENGTH_SHORT).show();
-
         }
-
         Toast.makeText(getApplicationContext(), "Pedido creado con exito", Toast.LENGTH_SHORT).show();
 
     }
