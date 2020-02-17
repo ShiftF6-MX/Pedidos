@@ -8,19 +8,18 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.gruposhift.cpedidos.adapters.AdapterPedidos;
+import com.gruposhift.cpedidos.constantes.URLs;
 import com.gruposhift.cpedidos.model.Cliente;
 import com.gruposhift.cpedidos.model.Venta;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
-
 import org.json.JSONArray;
 import org.json.JSONException;
-
 import java.util.ArrayList;
-import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -53,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void leerPhp(){
-        String url = "http://192.168.1.66:8080/pedidos/ReadMaxi.php";
+        String url = URLs.readPedidosActivos;
         httpClient.post(url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -82,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
                 venta.setReferencia(array.getJSONObject(i).getString("Referencia"));
                 venta.setFecha(array.getJSONObject(i).getString("Fecha"));
                 ventas.add(venta);
+
+             //   Toast.makeText(getApplicationContext(), "DAtos " + venta.getCliente().getNombre(), Toast.LENGTH_SHORT).show();
 
                 AdapterPedidos adapterPedidos = new AdapterPedidos(this,R.layout.list_pedidos, ventas);
                 listaPedidos.setAdapter(adapterPedidos);
