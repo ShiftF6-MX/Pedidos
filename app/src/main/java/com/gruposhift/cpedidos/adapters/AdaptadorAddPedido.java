@@ -53,8 +53,8 @@ public class AdaptadorAddPedido extends BaseAdapter {
         TextView unidad = (TextView) view.findViewById(R.id.unidad);
 
         nombreProducto.setText("Producto: "  + dventa.getPedido().getDescripcion());
-        cantidad.setText("Ref: " + dventa.getCantidad());
-        unidad.setText("F. Entrega: " + dventa.getUnidad());
+        cantidad.setText("Cantidad: " + dventa.getCantidad());
+        unidad.setText("Unidad: " + dventa.getUnidad());
 
         return view;
     }

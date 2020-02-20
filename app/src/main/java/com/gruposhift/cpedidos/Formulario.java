@@ -2,8 +2,10 @@ package com.gruposhift.cpedidos;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -64,8 +66,7 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
         listNuevoPedido = (ListView) findViewById(R.id.listNPedido);
         guardar = (Button) findViewById(R.id.btnGuardarPedido);
 
-        llamarPHP(URLs.readClientes, 1);
-        llamarPHP(URLs.readPRoductos, 2);
+        recuperarPeticion();
         spinnerEstatico();
 
 
@@ -101,6 +102,30 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
         });
     }
 
+    private void recuperarPeticion(){
+        Bundle bundle = getIntent().getExtras();
+        int opcion = bundle.getInt("opcion");
+
+        if(opcion == INSERTAR){
+            llamarPHP(URLs.readClientes, 1);
+            llamarPHP(URLs.readPRoductos, 2);
+            edtCantiad.setText("");
+            fechaEdt.setText("");
+        }else if(opcion == EDITAR){
+
+            int sysPK = bundle.getInt("sysPKVenta");
+            Toast.makeText(getApplicationContext(),"SysKP" + sysPK ,
+                    Toast.LENGTH_SHORT).show();
+            int cliente = bundle.getInt("sysPKCliente");
+            spCliente.setEnabled(false);
+            String fecha = bundle.getString("fecha");
+            fechaEdt.setText(fecha);
+            llamarPHP(URLs.readClienteSysPK + cliente, 1);
+            llamarPHP(URLs.readDetalleVentaSysPK + sysPK, 3);
+            Toast.makeText(getApplicationContext(), URLs.readDetalleVentaSysPK+sysPK , Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void showDatePicker() {
         final Calendar fecha = Calendar.getInstance();
         anio = fecha.get(Calendar.YEAR);
@@ -110,7 +135,7 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                fechaEdt.setText(year + "-" + month  +"-" + dayOfMonth );
+                fechaEdt.setText(year + "-" + (month+1)  +"-" + dayOfMonth );
             }
         }, anio, mes, dia);
         datePickerDialog.show();
@@ -161,6 +186,43 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
                 }
                 ArrayAdapter<Pedido> adapter = new ArrayAdapter<Pedido>(this, android.R.layout.simple_dropdown_item_1line, pedidos);
                 spProducto.setAdapter(adapter);
+            }
+
+            if (opcion == 3){
+                llamarPHP(URLs.readPRoductos, 2);
+                for (int i = 0; i < arrayRespues.length(); i++){
+                    final DVenta dVenta = new DVenta();
+                    Pedido pedido = new Pedido();
+                    pedido.setDescripcion(arrayRespues.getJSONObject(i).getString("Descripcion"));
+                    dVenta.setPedido(pedido);
+                    dVenta.setUnidad(arrayRespues.getJSONObject(i).getString("Unidad"));
+                    dVenta.setCantidad(arrayRespues.getJSONObject(i).getDouble("Notas"));
+                    dVentas.add(dVenta);
+
+                    Toast.makeText(getApplicationContext() ," Datos :" +dVentas.get(i).getPedido().getDescripcion()
+                    + " " + dVentas.get(i).getUnidad()+ " " +  dVentas.get(i).getCantidad(),Toast.LENGTH_SHORT).show();
+                    AdaptadorAddPedido adaptadorAddPedido = new AdaptadorAddPedido(this, R.layout.list_addpedido, dVentas);
+                    listNuevoPedido.setAdapter(adaptadorAddPedido);
+
+                    listNuevoPedido.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                            String cantidad = Double.toString(dVentas.get(position).getCantidad());
+                       //     spCantidad.setSelection(dVentas.get(position).getCantidad());
+                            spProducto.setSelection(position);
+                            //spProducto.getSelectedItem(dVentas.get(position).getPedido().getSysPK());
+                            //spProducto.setOnItemClickListener(this);
+                            Toast.makeText(getApplicationContext(), "Aca la posisicone de lvetas : "+ position,
+                                    Toast.LENGTH_SHORT).show();
+                            edtCantiad.setText(cantidad);
+
+
+                        }
+                    });
+
+
+                }
             }
 
         } catch (Exception e) {
@@ -309,42 +371,6 @@ public class Formulario extends AppCompatActivity  implements DialogFormulario.D
         }
 
     }
-
-    /*private void foliosDocumentos(String url, final BlockDocumento blockDocumento){
-        String url = "http://192.168.1.66:8080/pedidos/insertFoliosDocumentos.php?";
-        String parametros = "Folio=" +blockDocumento.getFultimo();
-        httpClient.post(url + parametros, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                if (statusCode == 200){
-                    Toast.makeText(getApplicationContext(), "Se hizo el insert folios", Toast.LENGTH_SHORT).show();
-                    leerUltimoFolio(blockDocumento);
-                }
-            }
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-
-            }
-        });
-    }*/
-
-   /* public void leerUltimoFolio(final BlockDocumento blockDocumento){
-        String url = "http://192.168.1.66:8080/pedidos/readUltimoFoliosDocumento.php";
-        httpClient.post(url, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                if (statusCode == 200){
-                    recuperarFolio(new String(responseBody), blockDocumento);
-                }
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-
-            }
-        });
-
-    }*/
 
     private void recuperarFolio(String response, BlockDocumento blockDocumento){
         try {
